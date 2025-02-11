@@ -2,7 +2,7 @@ name: PyCOLMAP
 on:
   push:
     branches:
-      - main
+      - dev
       - release/*
 
 jobs:
