@@ -21,10 +21,11 @@ jobs:
     strategy:
       matrix:
         config: [
-              {os: ubuntu-latest},
+              {os: ubuntu-latest, arch: x86_64},
+              {os: ubuntu-24.04-arm, arch: aarch64},
               {os: macos-13, arch: x86_64},
               {os: macos-14, arch: arm64},
-              {os: windows-latest},
+              {os: windows-latest, arch: amd64},
         ]
     env:
       COMPILER_CACHE_VERSION: 1
@@ -124,7 +125,13 @@ jobs:
       - name: Set env (Linux)
         if: runner.os == 'Linux'
         run: |
-          VCPKG_TARGET_TRIPLET="x64-linux-release"
+          if [[ ${{ matrix.config.arch }} == "x86_64" ]]; then
+            VCPKG_TARGET_TRIPLET="x64-linux-release"
+          elif [[ ${{ matrix.config.arch }} == "aarch64" ]]; then
+            VCPKG_TARGET_TRIPLET="aarch64-linux-release"
+          else
+            exit 1
+          fi
           echo "VCPKG_TARGET_TRIPLET=${VCPKG_TARGET_TRIPLET}" >> "$GITHUB_ENV"
 
           VCPKG_INSTALLATION_ROOT="${{ github.workspace }}/vcpkg"
