@@ -119,7 +119,7 @@ jobs:
           if [[ ${{ matrix.config.arch }} == "x86_64" ]]; then
             VCPKG_TARGET_TRIPLET="x64-linux-release"
           elif [[ ${{ matrix.config.arch }} == "aarch64" ]]; then
-            VCPKG_TARGET_TRIPLET="aarch64-linux-release"
+            VCPKG_TARGET_TRIPLET="arm64-linux-release"
           else
             exit 1
           fi
