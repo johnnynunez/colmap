@@ -13,17 +13,19 @@ echo "Detected architecture: $ARCH"
 if [ "$ARCH" = "x86_64" ]; then
     DEFAULT_VCPKG_TRIPLET="x64-linux"
     CCACHE_FILE="ccache-4.10.1-linux-x86_64"
+    TOOLCHAIN_PACKAGES="gcc-toolset-12-gcc gcc-toolset-12-gcc-c++ gcc-toolset-12-gcc-gfortran"
+    TOOLCHAIN_ENABLE_CMD="source scl_source enable gcc-toolset-12"
 elif [ "$ARCH" = "aarch64" ]; then
     DEFAULT_VCPKG_TRIPLET="arm64-linux"
     export VCPKG_FORCE_SYSTEM_BINARIES=1
+    TOOLCHAIN_PACKAGES="gcc gcc-c++ gcc-gfortran"
+    TOOLCHAIN_ENABLE_CMD=""
 else
     echo "Unsupported architecture: $ARCH"
     exit 1
 fi
 
 # Update the PATH variable (optional, depending on your environment)
-TOOLCHAIN_PACKAGES="gcc-toolset-12-gcc gcc-toolset-12-gcc-c++ gcc-toolset-12-gcc-gfortran"
-TOOLCHAIN_ENABLE_CMD="source scl_source enable gcc-toolset-12"
 export PATH="/usr/bin:${PATH}"
 
 # Install common dependencies and the appropriate toolchain
