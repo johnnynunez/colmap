@@ -18,8 +18,8 @@ if [ "$ARCH" = "x86_64" ]; then
     CCACHE_FILE="ccache-4.10.1-linux-x86_64"
 elif [ "$ARCH" = "aarch64" ]; then
     # Para aarch64 asumimos que se utiliza el compilador del sistema
-    TOOLCHAIN_PACKAGES="gcc gcc-c++ gcc-gfortran"
-    TOOLCHAIN_ENABLE_CMD=""  # No se necesita activar un toolchain adicional
+    TOOLCHAIN_PACKAGES="gcc-toolset-12-gcc gcc-toolset-12-gcc-c++ gcc-toolset-12-gcc-gfortran"
+    TOOLCHAIN_ENABLE_CMD="source scl_source enable gcc-toolset-12"
     DEFAULT_VCPKG_TRIPLET="aarch64-linux"
     CCACHE_FILE="ccache-4.10.1-linux-aarch64"
 else
@@ -37,7 +37,7 @@ yum install -y \
     perl-IPC-Cmd \
     scl-utils \
     git \
-    cmake \
+    cmake3 \
     ninja-build \
     curl \
     zip \
