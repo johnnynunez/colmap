@@ -37,7 +37,7 @@ yum install -y \
     perl-IPC-Cmd \
     scl-utils \
     git \
-    cmake3 \
+    cmake \
     ninja-build \
     curl \
     zip \
