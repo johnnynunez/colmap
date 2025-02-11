@@ -1,36 +1,31 @@
 #!/bin/bash
 set -e -x
 
-# Mostrar información del sistema
+# Show system information
 uname -a
 CURRDIR=$(pwd)
 
-# Determinar la arquitectura
+# Determine the architecture
 ARCH=$(uname -m)
-echo "Arquitectura detectada: $ARCH"
+echo "Detected architecture: $ARCH"
 
-# Definir variables según la arquitectura
+# Define variables according to the architecture
 if [ "$ARCH" = "x86_64" ]; then
-    # Para x86_64 usamos el toolchain de gcc-toolset-12
-    TOOLCHAIN_PACKAGES="gcc-toolset-12-gcc gcc-toolset-12-gcc-c++ gcc-toolset-12-gcc-gfortran"
-    TOOLCHAIN_ENABLE_CMD="source scl_source enable gcc-toolset-12"
     DEFAULT_VCPKG_TRIPLET="x64-linux"
     CCACHE_FILE="ccache-4.10.1-linux-x86_64"
 elif [ "$ARCH" = "aarch64" ]; then
-    # Para aarch64 asumimos que se utiliza el compilador del sistema
-    TOOLCHAIN_PACKAGES="gcc-toolset-12-gcc gcc-toolset-12-gcc-c++ gcc-toolset-12-gcc-gfortran"
-    TOOLCHAIN_ENABLE_CMD="source scl_source enable gcc-toolset-12"
     DEFAULT_VCPKG_TRIPLET="aarch64-linux"
-    CCACHE_FILE="ccache-4.10.1-linux-aarch64"
 else
-    echo "Arquitectura no soportada: $ARCH"
+    echo "Unsupported architecture: $ARCH"
     exit 1
 fi
 
-# Actualizar la variable PATH (opcional, según el entorno)
+# Update the PATH variable (optional, depending on your environment)
+TOOLCHAIN_PACKAGES="gcc-toolset-12-gcc gcc-toolset-12-gcc-c++ gcc-toolset-12-gcc-gfortran"
+TOOLCHAIN_ENABLE_CMD="source scl_source enable gcc-toolset-12"
 export PATH="/usr/bin:${PATH}"
 
-# Instalar las dependencias comunes y el toolchain adecuado
+# Install common dependencies and the appropriate toolchain
 yum install -y \
     ${TOOLCHAIN_PACKAGES} \
     kernel-headers \
@@ -44,32 +39,38 @@ yum install -y \
     unzip \
     tar
 
-# Si es x86_64, activar el toolchain de gcc-toolset-12
+# Enable the toolchain if applicable
 if [ -n "$TOOLCHAIN_ENABLE_CMD" ]; then
     eval "$TOOLCHAIN_ENABLE_CMD"
 fi
 
-# Preparar ccache (la versión del ccache incluido en CentOS/AlmaLinux puede ser antigua)
-COMPILER_TOOLS_DIR="${CONTAINER_COMPILER_CACHE_DIR}/bin"
-mkdir -p "${COMPILER_TOOLS_DIR}"
-if [ ! -f "${COMPILER_TOOLS_DIR}/ccache" ]; then
-    # Descargar el binario correspondiente según la arquitectura
-    curl -sSLO "https://github.com/ccache/ccache/releases/download/v4.10.1/${CCACHE_FILE}.tar.xz"
-    tar -xf "${CCACHE_FILE}.tar.xz"
-    cp "${CCACHE_FILE}/ccache" "${COMPILER_TOOLS_DIR}"
+# Set up ccache (only for x86_64; for aarch64 this is prepared for future use)
+if [ "$ARCH" = "x86_64" ]; then
+    COMPILER_TOOLS_DIR="${CONTAINER_COMPILER_CACHE_DIR}/bin"
+    mkdir -p "${COMPILER_TOOLS_DIR}"
+    if [ ! -f "${COMPILER_TOOLS_DIR}/ccache" ]; then
+        curl -sSLO "https://github.com/ccache/ccache/releases/download/v4.10.1/${CCACHE_FILE}.tar.xz"
+        tar -xf "${CCACHE_FILE}.tar.xz"
+        cp "${CCACHE_FILE}/ccache" "${COMPILER_TOOLS_DIR}"
+    fi
+    export PATH="${COMPILER_TOOLS_DIR}:${PATH}"
+else
+    echo "No precompiled ccache available for aarch64. The system ccache (if available) will be used."
 fi
-export PATH="${COMPILER_TOOLS_DIR}:${PATH}"
 
+# If VCPKG_TARGET_TRIPLET is not defined, use the default based on the architecture
 if [ -z "${VCPKG_TARGET_TRIPLET}" ]; then
     export VCPKG_TARGET_TRIPLET="${DEFAULT_VCPKG_TRIPLET}"
 fi
 
+# Configure vcpkg
 git clone https://github.com/microsoft/vcpkg "${VCPKG_INSTALLATION_ROOT}"
 cd "${VCPKG_INSTALLATION_ROOT}"
 git checkout "${VCPKG_COMMIT_ID}"
 ./bootstrap-vcpkg.sh
 ./vcpkg integrate install
 
+# Build COLMAP
 cd "${CURRDIR}"
 mkdir -p build && cd build
 cmake3 .. -GNinja \
@@ -85,6 +86,11 @@ cmake3 .. -GNinja \
     -DCMAKE_EXE_LINKER_FLAGS_INIT="-ldl"
 ninja install
 
-ccache --show-stats --verbose
-ccache --evict-older-than 1d
-ccache --show-stats --verbose
+# Run ccache commands if available
+if command -v ccache >/dev/null 2>&1; then
+    ccache --show-stats --verbose
+    ccache --evict-older-than 1d
+    ccache --show-stats --verbose
+else
+    echo "ccache not found, skipping ccache commands."
+fi
