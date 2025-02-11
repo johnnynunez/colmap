@@ -14,7 +14,7 @@ if [ "$ARCH" = "x86_64" ]; then
     DEFAULT_VCPKG_TRIPLET="x64-linux"
     CCACHE_FILE="ccache-4.10.1-linux-x86_64"
 elif [ "$ARCH" = "aarch64" ]; then
-    DEFAULT_VCPKG_TRIPLET="aarch64-linux"
+    DEFAULT_VCPKG_TRIPLET="arm64-linux"
     export VCPKG_FORCE_SYSTEM_BINARIES=1
 else
     echo "Unsupported architecture: $ARCH"
