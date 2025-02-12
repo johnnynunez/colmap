@@ -120,6 +120,7 @@ jobs:
             VCPKG_TARGET_TRIPLET="x64-linux-release"
           elif [[ ${{ matrix.config.arch }} == "aarch64" ]]; then
             VCPKG_TARGET_TRIPLET="arm64-linux-release"
+            export CMAKE_BUILD_PARALLEL_LEVEL=1 # to avoid OOM on GitHub Actions
           else
             exit 1
           fi
